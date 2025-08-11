@@ -45,7 +45,10 @@ class HomeScreen extends StatelessWidget {
         builder: (context, provider, child) {
           return Column(
             children: [
-              // サマリーカード：今月の収支を表示
+              // 月切り替えセレクタ
+              _buildMonthSelector(context, provider),
+
+              // サマリーカード：選択中の月の収支を表示
               _buildSummaryCards(context, provider),
 
               // 取引履歴リスト：残りのスペースを使用
@@ -74,6 +77,40 @@ class HomeScreen extends StatelessWidget {
   }
 
   // =============================================================================
+  // 月切り替えウィジェット
+  // =============================================================================
+
+  Widget _buildMonthSelector(
+    BuildContext context,
+    TransactionProvider provider,
+  ) {
+    final label = '${provider.selectedYear}年${provider.selectedMonth}月';
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () {
+              provider.previousMonth();
+            },
+          ),
+          Text(label, style: Theme.of(context).textTheme.titleMedium),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: provider.isCurrentMonth
+                ? null
+                : () {
+                    provider.nextMonth();
+                  },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =============================================================================
   // サマリーカード作成メソッド
   // =============================================================================
 
@@ -94,7 +131,7 @@ class HomeScreen extends StatelessWidget {
             child: _buildSummaryCard(
               context,
               '収入',
-              '¥${formatter.format(provider.thisMonthIncome)}',
+              '¥${formatter.format(provider.monthlyIncome)}',
               Colors.green, // 収入は緑色
               Icons.arrow_upward, // 上向き矢印
             ),
@@ -104,7 +141,7 @@ class HomeScreen extends StatelessWidget {
             child: _buildSummaryCard(
               context,
               '支出',
-              '¥${formatter.format(provider.thisMonthExpense)}',
+              '¥${formatter.format(provider.monthlyExpense)}',
               Colors.red, // 支出は赤色
               Icons.arrow_downward, // 下向き矢印
             ),
@@ -114,9 +151,9 @@ class HomeScreen extends StatelessWidget {
             child: _buildSummaryCard(
               context,
               '残高',
-              '¥${formatter.format(provider.thisMonthBalance)}',
+              '¥${formatter.format(provider.monthlyBalance)}',
               // 三項演算子：残高がマイナスの場合はオレンジ、プラスは青
-              provider.thisMonthBalance >= 0 ? Colors.blue : Colors.orange,
+              provider.monthlyBalance >= 0 ? Colors.blue : Colors.orange,
               Icons.account_balance_wallet, // 財布アイコン
             ),
           ),
