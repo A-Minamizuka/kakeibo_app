@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../models/transaction.dart' as models;
 
 // データベース操作を管理するクラス
@@ -19,7 +22,14 @@ class DatabaseHelper {
   factory DatabaseHelper() => _instance;
 
   // プライベートコンストラクタ：外部からの直接インスタンス化を防ぐ
-  DatabaseHelper._internal();
+  DatabaseHelper._internal() {
+    // デスクトップ環境やテスト環境ではsqflite_common_ffiを使用して初期化
+    if (!kIsWeb &&
+        (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+  }
 
   // データベースインスタンスを保存する変数
   // null許可型（?）：初期状態ではnull、初期化後にDatabaseインスタンスを格納

@@ -44,7 +44,7 @@ class ChartScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 今月のサマリー
+                // 月のサマリー
                 _buildMonthlySummary(context, provider),
                 const SizedBox(height: 24),
 
@@ -75,7 +75,7 @@ class ChartScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '今月のサマリー',
+              '${provider.selectedYear}年${provider.selectedMonth}月のサマリー',
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -87,22 +87,22 @@ class ChartScreen extends StatelessWidget {
                 _buildSummaryItem(
                   context,
                   '収入',
-                  '¥${formatter.format(provider.thisMonthIncome)}',
+                  '¥${formatter.format(provider.monthlyIncome)}',
                   Colors.green,
                   Icons.trending_up,
                 ),
                 _buildSummaryItem(
                   context,
                   '支出',
-                  '¥${formatter.format(provider.thisMonthExpense)}',
+                  '¥${formatter.format(provider.monthlyExpense)}',
                   Colors.red,
                   Icons.trending_down,
                 ),
                 _buildSummaryItem(
                   context,
                   '残高',
-                  '¥${formatter.format(provider.thisMonthBalance)}',
-                  provider.thisMonthBalance >= 0 ? Colors.blue : Colors.orange,
+                  '¥${formatter.format(provider.monthlyBalance)}',
+                  provider.monthlyBalance >= 0 ? Colors.blue : Colors.orange,
                   Icons.account_balance_wallet,
                 ),
               ],

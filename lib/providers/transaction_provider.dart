@@ -14,10 +14,14 @@ class TransactionProvider with ChangeNotifier {
   final DatabaseHelper _db = DatabaseHelper();
 
   // アンダースコア（_）で始まる変数はプライベート（外部からアクセス不可）
-  List<Transaction> _transactions = []; // 今月の取引一覧
-  double _thisMonthIncome = 0.0; // 今月の収入合計
-  double _thisMonthExpense = 0.0; // 今月の支出合計
+  List<Transaction> _transactions = []; // 選択中の月の取引一覧
+  double _monthlyIncome = 0.0; // 選択中の月の収入合計
+  double _monthlyExpense = 0.0; // 選択中の月の支出合計
   Map<String, double> _expenseByCategory = {}; // カテゴリ別支出
+
+  // 表示する年と月（初期値は現在）
+  int _selectedYear = DateTime.now().year;
+  int _selectedMonth = DateTime.now().month;
 
   // =============================================================================
   // パブリックgetters（外部からの読み取り専用アクセス）
@@ -26,15 +30,25 @@ class TransactionProvider with ChangeNotifier {
   // 取引一覧を取得（読み取り専用）
   List<Transaction> get transactions => _transactions;
 
-  // 今月の収入を取得
-  double get thisMonthIncome => _thisMonthIncome;
+  // 選択中の年と月を取得
+  int get selectedYear => _selectedYear;
+  int get selectedMonth => _selectedMonth;
 
-  // 今月の支出を取得
-  double get thisMonthExpense => _thisMonthExpense;
+  // 選択中の月の収入を取得
+  double get monthlyIncome => _monthlyIncome;
 
-  // 今月の残高を計算（収入 - 支出）
+  // 選択中の月の支出を取得
+  double get monthlyExpense => _monthlyExpense;
+
+  // 選択中の月の残高を計算（収入 - 支出）
   // 計算プロパティ：呼び出し時に動的に計算される
-  double get thisMonthBalance => _thisMonthIncome - _thisMonthExpense;
+  double get monthlyBalance => _monthlyIncome - _monthlyExpense;
+
+  // 現在の月を表示しているかどうか
+  bool get isCurrentMonth {
+    final now = DateTime.now();
+    return _selectedYear == now.year && _selectedMonth == now.month;
+  }
 
   // カテゴリ別支出を取得
   Map<String, double> get expenseByCategory => _expenseByCategory;
@@ -46,16 +60,16 @@ class TransactionProvider with ChangeNotifier {
   // 初期化処理：今月のデータを読み込み
   // アプリ起動時やデータ更新後に呼び出される
   Future<void> loadTransactions() async {
-    final now = DateTime.now();
-
-    // 今月の取引データを取得
-    _transactions = await _db.getTransactionsByMonth(now.year, now.month);
+    // 選択中の月の取引データを取得
+    _transactions =
+        await _db.getTransactionsByMonth(_selectedYear, _selectedMonth);
 
     // 月別サマリー（収入・支出）を読み込み
     await _loadMonthlySummary();
 
     // カテゴリ別支出を読み込み
-    _expenseByCategory = await _db.getExpensesByCategory(now.year, now.month);
+    _expenseByCategory =
+        await _db.getExpensesByCategory(_selectedYear, _selectedMonth);
 
     // 状態変更をUI（リスナー）に通知
     // この呼び出しによりConsumer<TransactionProvider>で包まれたウィジェットが再ビルドされる
@@ -64,13 +78,13 @@ class TransactionProvider with ChangeNotifier {
 
   // 月別サマリーを読み込み（プライベートヘルパーメソッド）
   Future<void> _loadMonthlySummary() async {
-    final now = DateTime.now();
-    // データベースから今月のサマリーを取得
-    final summary = await _db.getMonthlySummary(now.year, now.month);
+    // データベースから選択中の月のサマリーを取得
+    final summary =
+        await _db.getMonthlySummary(_selectedYear, _selectedMonth);
 
     // null合体演算子（??）：左辺がnullの場合に右辺の値を使用
-    _thisMonthIncome = summary['income'] ?? 0.0;
-    _thisMonthExpense = summary['expense'] ?? 0.0;
+    _monthlyIncome = summary['income'] ?? 0.0;
+    _monthlyExpense = summary['expense'] ?? 0.0;
   }
 
   // =============================================================================
@@ -110,6 +124,28 @@ class TransactionProvider with ChangeNotifier {
 
     // データを再読み込みして表示を更新
     await loadTransactions();
+  }
+
+  // 表示月を前月に変更
+  void previousMonth() {
+    if (_selectedMonth == 1) {
+      _selectedYear--;
+      _selectedMonth = 12;
+    } else {
+      _selectedMonth--;
+    }
+    loadTransactions();
+  }
+
+  // 表示月を翌月に変更
+  void nextMonth() {
+    if (_selectedMonth == 12) {
+      _selectedYear++;
+      _selectedMonth = 1;
+    } else {
+      _selectedMonth++;
+    }
+    loadTransactions();
   }
 }
 
